@@ -1,0 +1,39 @@
+services:
+  guacdb:
+    container_name: guacamole-db
+    image: mariadb:10
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: '$DB_ROOT_PASS'
+      MYSQL_DATABASE: 'guacamole_db'
+      MYSQL_USER: '$DB_USER'
+      MYSQL_PASSWORD: '$DB_USER_PASS'
+    volumes:
+      - 'db-data:/var/lib/mysql'
+      - 'initdb:/docker-entrypoint-initdb.d:ro'
+  guacd:
+    container_name: guacd
+    image: guacamole/guacd:1.6.0
+    restart: unless-stopped
+  guacamole:
+    container_name: guacamole
+    image: guacamole/guacamole:1.6.0
+    restart: unless-stopped
+    ports:
+      - 8080:8080
+    environment:
+      GUACD_HOSTNAME: "guacd"
+      MYSQL_ENABLED: "true"
+      MYSQL_HOSTNAME: "guacdb"
+      MYSQL_DATABASE: "guacamole_db"
+      MYSQL_USER: "$DB_USER"
+      MYSQL_PASSWORD: "$DB_USER_PASS"
+      TOTP_ENABLED: "true"
+    volumes:
+      - "initdb:/opt/guacamole/extensions/guacamole-auth-jdbc/mysql/schema:ro"
+    depends_on:
+      - guacdb
+      - guacd
+volumes:
+  db-data:
+  initdb:
